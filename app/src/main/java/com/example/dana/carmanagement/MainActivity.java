@@ -1,33 +1,47 @@
 package com.example.dana.carmanagement;
 
+import android.app.AlertDialog;
+import android.app.ListActivity;
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.ContextMenu;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 
+import com.example.dana.carmanagement.contentprovider.CarContentProvider;
+import com.example.dana.carmanagement.database.CarTable;
 import com.example.dana.carmanagement.model.Car;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-    private ListView listView;
-    public static List<Car> cars;
-    public static CarAdapter carAdapter;
+public class MainActivity extends ListActivity implements
+        LoaderManager.LoaderCallbacks<Cursor> {
+
+    private static final int ACTIVITY_CREATE = 0;
+    private static final int ACTIVITY_EDIT = 1;
+    private static final int DELETE_ID = Menu.FIRST + 1;
+
+    public SimpleCursorAdapter carAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         final Context context = this;
 
@@ -35,33 +49,23 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
                 Intent newCarIntent = new Intent(context, NewCarActivity.class);
                 startActivity(newCarIntent);
             }
         });
 
-        listView = (ListView) findViewById(R.id.listView);
-        generateCars();
-        carAdapter = new CarAdapter(this, cars);
-        listView.setAdapter(carAdapter);
+        fillData();
+        registerForContextMenu(getListView());
+    }
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Car car = cars.get(position);
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        Intent i = new Intent(this, CarDetailsActivity.class);
+        Uri carUri = Uri.parse(CarContentProvider.CONTENT_URI + "/" + id);
+        i.putExtra(CarContentProvider.CONTENT_ITEM_TYPE, carUri);
 
-                Intent detailIntent = new Intent(context, CarDetailsActivity.class);
-                detailIntent.putExtra("make", car.getMake());
-                detailIntent.putExtra("model", car.getModel());
-                detailIntent.putExtra("year", String.valueOf(car.getYear()));
-                // put the position in order to be able to modify the car when the save button is clicked
-                detailIntent.putExtra("position", String.valueOf(position));
-
-                startActivity(detailIntent);
-            }
-        });
+        startActivity(i);
     }
 
     @Override
@@ -86,11 +90,75 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void generateCars() {
-        cars = new ArrayList<>();
-        for(int i = 0; i < 10; i++) {
-            Car car = new Car("Make" + i, "Model" + i, 2000 + i);
-            cars.add(car);
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case DELETE_ID:
+                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
+                        .getMenuInfo();
+                final Uri uri = Uri.parse(CarContentProvider.CONTENT_URI + "/"
+                        + info.id);
+
+                new AlertDialog.Builder(this)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setTitle("Delete")
+                        .setMessage("This car will be deleted.")
+                        .setPositiveButton("Delete", new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                getContentResolver().delete(uri, null, null);
+                                fillData();
+                            }
+
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+
+
+                return true;
         }
+        return super.onContextItemSelected(item);
+    }
+
+    private void fillData() {
+        // Fields from the database (projection)
+        // Must include the _id column for the adapter to work
+        String[] from = new String[] {CarTable.COLUMN_MAKE };
+        // Fields on the UI to which we map
+        int[] to = new int[] { R.id.makeItem };
+
+        getLoaderManager().initLoader(0, null, this);
+        carAdapter = new SimpleCursorAdapter(this, R.layout.item, null, from,
+                to, 0);
+
+        setListAdapter(carAdapter);
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        menu.add(0, DELETE_ID, 0, "Delete");
+    }
+
+    // creates a new loader after the initLoader () call
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = { CarTable.COLUMN_ID, CarTable.COLUMN_MAKE };
+        CursorLoader cursorLoader = new CursorLoader(this,
+                CarContentProvider.CONTENT_URI, projection, null, null, null);
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        carAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        // data is not available anymore, delete reference
+        carAdapter.swapCursor(null);
     }
 }

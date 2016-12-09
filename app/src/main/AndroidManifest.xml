@@ -30,7 +30,11 @@
         <activity
             android:name=".NewCarActivity"
             android:label="@string/title_activity_new_car"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <provider
+            android:authorities="com.example.dana.carmanagement.contentprovider"
+            android:name=".contentprovider.CarContentProvider" >
+        </provider>
     </application>
 
 </manifest>

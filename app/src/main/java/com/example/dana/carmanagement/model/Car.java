@@ -1,22 +1,29 @@
 package com.example.dana.carmanagement.model;
 
-/**
- * Created by dana on 11/9/2016.
- */
-
 public class Car {
+    private Long id;
     private String make;
     private String model;
     private Integer year;
+    private Integer price;
 
     public Car(){
 
     }
 
-    public Car(String make, String model, Integer year) {
+    public Car(String make, String model, Integer year, Integer price) {
         this.make = make;
         this.model = model;
         this.year = year;
+        this.price = price;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getMake() {
@@ -43,12 +50,21 @@ public class Car {
         this.model = model;
     }
 
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+        this.price = price;
+    }
+
     @Override
     public String toString() {
         return "Car{" +
                 "make='" + make + '\'' +
                 ", model='" + model + '\'' +
                 ", year=" + year +
+                ", price=" + price +
                 '}';
     }
 }

@@ -11,10 +11,6 @@ import com.example.dana.carmanagement.model.Car;
 
 import java.util.List;
 
-/**
- * Created by dana on 11/9/2016.
- */
-
 public class CarAdapter extends BaseAdapter {
     private Context context;
     private LayoutInflater layoutInflater;
@@ -46,12 +42,12 @@ public class CarAdapter extends BaseAdapter {
         // Get the view for the row item
         View rowView = layoutInflater.inflate(R.layout.item, parent, false);
 
-        TextView makeTextView = (TextView) rowView.findViewById(R.id.make);
-        TextView modelTextView = (TextView) rowView.findViewById(R.id.model);
+        TextView makeTextView = (TextView) rowView.findViewById(R.id.makeItem);
+        //TextView modelTextView = (TextView) rowView.findViewById(R.id.model);
 
         Car car = (Car) getItem(position);
         makeTextView.setText(car.getMake());
-        modelTextView.setText(car.getModel());
+        //modelTextView.setText(car.getModel());
 
         return rowView;
     }
