@@ -28,4 +28,10 @@ dependencies {
     compile 'com.android.support:design:24.2.1'
     compile group: 'org.achartengine', name: 'achartengine', version: '1.2.0'
     testCompile 'junit:junit:4.12'
+    compile 'com.google.firebase:firebase-database:9.4.0'
+    compile 'com.google.firebase:firebase-auth:9.4.0'
+    compile 'com.google.firebase:firebase-core:9.4.0'
+    compile 'com.google.firebase:firebase-messaging:9.4.0'
 }
+
+apply plugin: 'com.google.gms.google-services'

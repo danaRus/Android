@@ -31,10 +31,29 @@
             android:name=".NewCarActivity"
             android:label="@string/title_activity_new_car"
             android:theme="@style/AppTheme.NoActionBar" />
+
         <provider
-            android:authorities="com.example.dana.carmanagement.contentprovider"
-            android:name=".contentprovider.CarContentProvider" >
-        </provider>
+            android:name=".contentprovider.CarContentProvider"
+            android:authorities="com.example.dana.carmanagement.contentprovider" />
+
+        <activity android:name=".LogInActivity" />
+        <activity android:name=".SignUpActivity"></activity>
+
+        <!-- A Service is an application component that can perform long-running operations
+        in the background, and it does not provide a user interface.-->
+        <service
+            android:name=".firebaseutil.FirebaseMessagingServiceImpl">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+        <service
+            android:name=".firebaseutil.FirebaseInstanceIDServiceImpl">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

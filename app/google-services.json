@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "96922560350",
+    "firebase_url": "https://carmanagement-476f1.firebaseio.com",
+    "project_id": "carmanagement-476f1",
+    "storage_bucket": "carmanagement-476f1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:96922560350:android:4bd54cc9cd79f980",
+        "android_client_info": {
+          "package_name": "com.example.dana.carmanagement"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "96922560350-b1hmvrbpmnfa4bsk3ta724593ae9n0t6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUtasyNU0vjwHXsNlKildxhFzVqYpJpJk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

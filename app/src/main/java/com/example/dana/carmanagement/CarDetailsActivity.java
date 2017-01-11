@@ -1,13 +1,9 @@
 package com.example.dana.carmanagement;
 
-import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -17,8 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.dana.carmanagement.contentprovider.CarContentProvider;
-import com.example.dana.carmanagement.database.CarTable;
+import com.example.dana.carmanagement.model.Car;
 import com.example.dana.carmanagement.pickers.YearPicker;
 
 import org.achartengine.ChartFactory;
@@ -32,14 +27,16 @@ import org.achartengine.renderer.XYSeriesRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CarDetailsActivity extends AppCompatActivity {
-    private Uri carUri;
     private EditText makeText;
     private EditText modelText;
     private static TextView yearText;
     private EditText priceText;
-    private Long id;
+    private List<String> models;
+    private List<Integer> prices;
+    private String uuid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,19 +50,20 @@ public class CarDetailsActivity extends AppCompatActivity {
         yearText = (TextView) findViewById(R.id.yearDetail);
         priceText = (EditText) findViewById(R.id.priceDetail);
 
-        Bundle extras = getIntent().getExtras();
+        Intent i = getIntent();
+        String make = i.getExtras().getString("make");
+        String model = i.getExtras().getString("model");
+        String year = i.getExtras().getString("year");
+        String price = i.getExtras().getString("price");
+        uuid = i.getExtras().getString("uuid");
+        models = i.getExtras().getStringArrayList("models");
+        prices = i.getExtras().getIntegerArrayList("prices");
 
-        // check from the saved Instance
-        carUri = (savedInstanceState == null) ? null : (Uri) savedInstanceState
-                .getParcelable(CarContentProvider.CONTENT_ITEM_TYPE);
+        makeText.setText(make);
+        modelText.setText(model);
+        yearText.setText(year);
+        priceText.setText(price);
 
-        // Or passed from the other activity
-        if (extras != null) {
-            carUri = extras
-                    .getParcelable(CarContentProvider.CONTENT_ITEM_TYPE);
-
-            fillData(carUri);
-        }
         getChart();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -76,7 +74,16 @@ public class CarDetailsActivity extends AppCompatActivity {
                         || TextUtils.isEmpty(yearText.getText().toString()) || TextUtils.isEmpty(priceText.getText().toString())) {
                     Toast.makeText(view.getContext(), "No field can be empty.", Toast.LENGTH_SHORT).show();
                 } else {
-                    CarDetailsActivity.this.saveState();
+                    final Car car = new Car();
+                    car.setMake(makeText.getText().toString());
+                    car.setModel(modelText.getText().toString());
+                    car.setYear(Integer.valueOf(yearText.getText().toString()));
+                    car.setPrice(Integer.valueOf(priceText.getText().toString()));
+                    car.setUuid(uuid);
+
+                    Map<String,Object> carMap = car.carToMap();
+                    MainActivity.firebaseUtil.update(uuid, carMap);
+
                     Toast.makeText(view.getContext(), "The car's data has been modified", Toast.LENGTH_SHORT).show();
 
                     setResult(RESULT_OK);
@@ -84,54 +91,6 @@ public class CarDetailsActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private void fillData(Uri uri) {
-        String[] projection = {CarTable.COLUMN_ID, CarTable.COLUMN_MAKE,
-                CarTable.COLUMN_MODEL, CarTable.COLUMN_YEAR, CarTable.COLUMN_PRICE };
-        Cursor cursor = getContentResolver().query(uri, projection, null, null,
-                null);
-        if (cursor != null) {
-            cursor.moveToFirst();
-            id = cursor.getLong(cursor.getColumnIndexOrThrow(CarTable.COLUMN_ID));
-            makeText.setText(cursor.getString(cursor
-                    .getColumnIndexOrThrow(CarTable.COLUMN_MAKE)));
-            modelText.setText(cursor.getString(cursor
-                    .getColumnIndexOrThrow(CarTable.COLUMN_MODEL)));
-            yearText.setText(cursor.getString(cursor
-                    .getColumnIndexOrThrow(CarTable.COLUMN_YEAR)));
-            priceText.setText(cursor.getString(cursor
-                    .getColumnIndexOrThrow(CarTable.COLUMN_PRICE)));
-            // always close the cursor
-            cursor.close();
-        }
-    }
-
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        saveState();
-        outState.putParcelable(CarContentProvider.CONTENT_ITEM_TYPE, carUri);
-    }
-
-    public void saveState() {
-        String make = makeText.getText().toString();
-        String model = modelText.getText().toString();
-        Integer year = Integer.valueOf(yearText.getText().toString());
-        Integer price = Integer.valueOf(priceText.getText().toString());
-
-        // only save if either make or model is available
-        if (make.length() == 0 && model.length() == 0) {
-            return;
-        }
-
-        ContentValues values = new ContentValues();
-        values.put(CarTable.COLUMN_MAKE, make);
-        values.put(CarTable.COLUMN_MODEL, model);
-        values.put(CarTable.COLUMN_YEAR, year);
-        values.put(CarTable.COLUMN_PRICE, price);
-
-        // Update the car
-        getContentResolver().update(carUri, values, null, null);
     }
 
     public void showYearDialog(View v) {
@@ -146,25 +105,20 @@ public class CarDetailsActivity extends AppCompatActivity {
 
     public void getChart() {
         XYSeries series = new XYSeries("");
-        String[] projection = {CarTable.COLUMN_MAKE, CarTable.COLUMN_PRICE };
-        Cursor cursor = getContentResolver().query(CarContentProvider.CONTENT_URI, projection, null, null,
-                null);
         List<String> text = new ArrayList<>();
-        cursor.moveToFirst();
-        for(int i = 0; i < cursor.getCount();i++) {
-            text.add(cursor.getString(0));
-            series.add(i, cursor.getInt(1));
-            cursor.moveToNext();
-        }
-        cursor.close();
 
-        // Now we create the renderer
+        for(int i = 0; i < models.size();i++) {
+            text.add(models.get(i));
+            series.add(i, prices.get(i));
+        }
+
+        // Create the renderer
         XYSeriesRenderer renderer = new XYSeriesRenderer();
         renderer.setLineWidth(2);
         renderer.setColor(Color.BLACK);
         // Include low and max value
         renderer.setDisplayBoundingPoints(true);
-        // we add point markers
+        // Add point markers
         renderer.setPointStyle(PointStyle.CIRCLE);
         renderer.setPointStrokeWidth(3);
 
@@ -185,7 +139,7 @@ public class CarDetailsActivity extends AppCompatActivity {
         mRenderer.setPanEnabled(false, false);
         mRenderer.setYAxisMax(35);
         mRenderer.setYAxisMin(0);
-        mRenderer.setShowGrid(true); // we show the grid
+        mRenderer.setShowGrid(true); // Show the grid
         mRenderer.setBarSpacing(2);
         mRenderer.setChartTitle("Car prices");
         mRenderer.setChartTitleTextSize(50);

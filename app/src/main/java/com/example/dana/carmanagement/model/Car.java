@@ -1,7 +1,12 @@
 package com.example.dana.carmanagement.model;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class Car {
     private Long id;
+    private String uuid;
     private String make;
     private String model;
     private Integer year;
@@ -56,6 +61,33 @@ public class Car {
 
     public void setPrice(Integer price) {
         this.price = price;
+    }
+
+    public String getUuid() {
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString();
+        }
+        return uuid;
+    }
+
+    public void setUuid() {
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString();
+        }
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Map<String, Object> carToMap() {
+        Map<String,Object> carMap = new HashMap<>();
+        carMap.put("uuid", uuid);
+        carMap.put("make", make);
+        carMap.put("model", model);
+        carMap.put("year", year);
+        carMap.put("price", price);
+        return carMap;
     }
 
     @Override

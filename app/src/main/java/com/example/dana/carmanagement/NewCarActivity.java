@@ -17,6 +17,10 @@ import com.example.dana.carmanagement.contentprovider.CarContentProvider;
 import com.example.dana.carmanagement.database.CarTable;
 import com.example.dana.carmanagement.model.Car;
 import com.example.dana.carmanagement.pickers.YearPicker;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class NewCarActivity extends AppCompatActivity {
 
@@ -46,7 +50,21 @@ public class NewCarActivity extends AppCompatActivity {
                         || TextUtils.isEmpty(yearText.getText().toString()) || TextUtils.isEmpty(priceText.getText().toString())) {
                     Toast.makeText(view.getContext(), "No field can be empty", Toast.LENGTH_SHORT).show();
                 } else {
-                    NewCarActivity.this.saveState();
+                    String make = makeText.getText().toString();
+                    String model = modelText.getText().toString();
+                    Integer year = Integer.valueOf(yearText.getText().toString());
+                    Integer price = Integer.valueOf(priceText.getText().toString());
+                    Car car = new Car();
+                    car.setMake(make);
+                    car.setModel(model);
+                    car.setYear(year);
+                    car.setPrice(price);
+                    car.setUuid();
+
+                    MainActivity.firebaseUtil.add(car);
+
+                    sendEmail(car);
+
                     Toast.makeText(view.getContext(), "A new car has been inserted", Toast.LENGTH_SHORT).show();
 
                     setResult(RESULT_OK);
@@ -56,39 +74,13 @@ public class NewCarActivity extends AppCompatActivity {
         });
     }
 
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        saveState();
-        outState.putParcelable(CarContentProvider.CONTENT_ITEM_TYPE, carUri);
-    }
-
-    public void saveState() {
-        String make = makeText.getText().toString();
-        String model = modelText.getText().toString();
-        Integer year = Integer.valueOf(yearText.getText().toString());
-        Integer price = Integer.valueOf(priceText.getText().toString());
-
-        // only save if either make or model is available
-        if (make.length() == 0 && model.length() == 0) {
-            return;
-        }
-
-        ContentValues values = new ContentValues();
-        values.put(CarTable.COLUMN_MAKE, make);
-        values.put(CarTable.COLUMN_MODEL, model);
-        values.put(CarTable.COLUMN_YEAR, year);
-        values.put(CarTable.COLUMN_PRICE, price);
-
-        // New car
-        carUri = getContentResolver().insert(
-                CarContentProvider.CONTENT_URI, values);
-
+    public void sendEmail(Car car) {
         // send email using an email client
         Intent emailIntent = new Intent(Intent.ACTION_SEND);
         emailIntent.setType("message/rfc822");
         emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"anad_95@yahoo.com"});
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Car insertion");
-        String emailBody = "The car : \n " + new Car(make, model, year, price).toString() + "\n has been inserted.";
+        String emailBody = "The car : \n " + car.toString() + "\n has been inserted.";
         emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
 
         try {
